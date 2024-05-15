@@ -87,7 +87,14 @@ export default class PandocPlugin extends Plugin {
 
     async startPandocExport(inputFile: string, format: OutputFormat, extension: string, shortName: string) {
         new Notice(`Exporting ${inputFile} to ${shortName}`);
-
+        const noteFile = this.app.workspace.getActiveFile();
+        let fm = this.app.metadataCache.getFileCache(noteFile)?.frontmatter;
+        let extraArguments = [];
+        if (fm && fm["additional-pandoc-arguments"]) {
+          extraArguments.push(...fm["additional-pandoc-arguments"]);
+        }
+        extraArguments.push(...this.settings.extraArguments.split("\n"));
+    
         // Instead of using Pandoc to process the raw Markdown, we use Obsidian's
         // internal markdown renderer, and process the HTML it generates instead.
         // This allows us to more easily deal with Obsidian specific Markdown syntax.
@@ -123,7 +130,7 @@ export default class PandocPlugin extends Plugin {
                                 directory: path.dirname(inputFile),
                             },
                             { file: outputFile, format },
-                            this.settings.extraArguments.split('\n')
+                            extraArguments
                         );
                         error = result.error;
                         command = result.command;
@@ -138,7 +145,7 @@ export default class PandocPlugin extends Plugin {
                             directory: path.dirname(inputFile),
                         },
                         { file: outputFile, format },
-                        this.settings.extraArguments.split('\n')
+                        extraArguments
                     );
                     error = result.error;
                     command = result.command;
