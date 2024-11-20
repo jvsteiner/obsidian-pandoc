@@ -11,6 +11,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import { Notice, Plugin, FileSystemAdapter, MarkdownView } from 'obsidian';
+import { TFile } from 'obsidian';
 import { lookpath } from 'lookpath';
 import { pandoc, inputExtensions, outputFormats, OutputFormat, needsLaTeX, needsPandoc } from './pandoc';
 import * as YAML from 'yaml';
@@ -85,9 +86,9 @@ export default class PandocPlugin extends Plugin {
         this.features['pdflatex'] = this.settings.pdflatex || await lookpath('pdflatex');
     }
 
-    async startPandocExport(inputFile: string, format: OutputFormat, extension: string, shortName: string) {
+    async startPandocExport(inputFile: string, format: OutputFormat, extension: string, shortName: string, overrideFile?: TFile): Promise<string> {
         new Notice(`Exporting ${inputFile} to ${shortName}`);
-        const noteFile = this.app.workspace.getActiveFile();
+        const noteFile = overrideFile || this.app.workspace.getActiveFile();
         let fm = this.app.metadataCache.getFileCache(noteFile)?.frontmatter;
         let extraArguments = [];
         if (fm && fm["additional-pandoc-arguments"]) {
@@ -117,7 +118,7 @@ export default class PandocPlugin extends Plugin {
                         // Write to HTML file
                         await fs.promises.writeFile(outputFile, html);
                         new Notice('Successfully exported via Pandoc to ' + outputFile);
-                        return;
+                        return outputFile;
                     } else {
                         // Spawn Pandoc
                         const metadataFile = temp.path();
@@ -168,6 +169,7 @@ export default class PandocPlugin extends Plugin {
             new Notice('Pandoc export failed: ' + e.toString(), 15000);
             console.error(e);
         }
+        return outputFile;
     }
 
     onunload() {
