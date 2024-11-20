@@ -86,7 +86,7 @@ export default class PandocPlugin extends Plugin {
         this.features['pdflatex'] = this.settings.pdflatex || await lookpath('pdflatex');
     }
 
-    async startPandocExport(inputFile: string, format: OutputFormat, extension: string, shortName: string, overrideFile?: TFile) {
+    async startPandocExport(inputFile: string, format: OutputFormat, extension: string, shortName: string, overrideFile?: TFile): Promise<string> {
         new Notice(`Exporting ${inputFile} to ${shortName}`);
         const noteFile = overrideFile || this.app.workspace.getActiveFile();
         let fm = this.app.metadataCache.getFileCache(noteFile)?.frontmatter;
@@ -118,7 +118,7 @@ export default class PandocPlugin extends Plugin {
                         // Write to HTML file
                         await fs.promises.writeFile(outputFile, html);
                         new Notice('Successfully exported via Pandoc to ' + outputFile);
-                        return;
+                        return outputFile;
                     } else {
                         // Spawn Pandoc
                         const metadataFile = temp.path();
@@ -169,6 +169,7 @@ export default class PandocPlugin extends Plugin {
             new Notice('Pandoc export failed: ' + e.toString(), 15000);
             console.error(e);
         }
+        return outputFile;
     }
 
     onunload() {
